@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'kendali.dart'; // Import halaman Kendali
 import 'beranda.dart'; // Import halaman Beranda
 import 'riwayat.dart'; // Import halaman Riwayat
 import 'tanam.dart'; // Import halaman Tanam
@@ -39,7 +38,6 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _pages.addAll([
-      ControlPage(), // Halaman Kendali
       HomeScreen(username: widget.username), // Halaman Beranda
       HistoryScreen(), // Halaman Riwayat
       Tanam(), // Halaman Tanam (baru ditambahkan)
@@ -65,10 +63,6 @@ class _HomePageState extends State<HomePage> {
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped, // Menangani onTap untuk berpindah halaman
         items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Kendali',
-          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.house),
             label: 'Beranda',

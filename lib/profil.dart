@@ -205,7 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse("http://192.168.231.37/api/update_profile.php"),
+        Uri.parse("http://192.168.18.63/api/update_profile.php"),
       );
       request.fields['id_user'] = '1';
       request.fields['username'] = usernameController.text;

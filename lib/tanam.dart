@@ -13,8 +13,12 @@ class _TanamState extends State<Tanam> {
   final TextEditingController jamController = TextEditingController();
 
   // Controllers untuk 1-4 Minggu
-  final List<TextEditingController> kadarNutrisiControllers = List.generate(4, (_) => TextEditingController());
-  final List<TextEditingController> waktuControllers = List.generate(4, (_) => TextEditingController());
+  final List<TextEditingController> ambangTdsControllers =
+      List.generate(4, (_) => TextEditingController());
+  final List<TextEditingController> waktuMulaiControllers =
+      List.generate(4, (_) => TextEditingController());
+  final List<TextEditingController> waktuBerakhirControllers =
+      List.generate(4, (_) => TextEditingController());
 
   // Fungsi untuk memilih tanggal
   Future<void> _pilihTanggal(BuildContext context) async {
@@ -25,7 +29,8 @@ class _TanamState extends State<Tanam> {
       lastDate: DateTime(2100),
     );
     if (pickedDate != null) {
-      String formattedDate = "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
+      String formattedDate =
+          "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
       setState(() {
         tanggalController.text = formattedDate;
       });
@@ -33,13 +38,21 @@ class _TanamState extends State<Tanam> {
   }
 
   // Fungsi untuk memilih jam
-  Future<void> _pilihJam(BuildContext context, TextEditingController controller) async {
+  Future<void> _pilihJam(BuildContext context, TextEditingController controller, {bool isMinggu = false}) async {
     TimeOfDay? pickedTime = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
     );
     if (pickedTime != null) {
-      String formattedTime = "${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}";
+      String formattedTime;
+      if (isMinggu) {
+        // Jika untuk Minggu, hanya format jam yang diambil
+        formattedTime = "${pickedTime.hour.toString().padLeft(2, '0')}";
+      } else {
+        // Untuk Mulai Tanam, format lengkap dengan menit
+        formattedTime = "${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}";
+      }
+
       setState(() {
         controller.text = formattedTime;
       });
@@ -69,15 +82,19 @@ class _TanamState extends State<Tanam> {
         }),
       );
 
-      final responseData = jsonDecode(response.body);
-      if (responseData['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Data Mulai Tanam berhasil disimpan!")),
-        );
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['success']) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Data Mulai Tanam berhasil disimpan!")),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Gagal menyimpan data: ${responseData['message']}")),
+          );
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Gagal menyimpan data: ${responseData['message']}")),
-        );
+        throw Exception("Respons server tidak valid!");
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -85,53 +102,6 @@ class _TanamState extends State<Tanam> {
       );
     }
   }
-
-  // Fungsi untuk mengirim data "1-4 Minggu"
-  Future<void> kirimDataPengukuran() async {
-  final String apiUrl = 'http://192.168.1.18/api/save_kadar_nutrisi.php'; // Ganti URL API
-
-  try {
-    for (int i = 0; i < 4; i++) {
-      String kadarNutrisi = kadarNutrisiControllers[i].text;
-      String waktu = waktuControllers[i].text;
-      int idPengukuran = i + 1; // Assign ID sesuai urutan (1, 2, 3, 4)
-
-      if (kadarNutrisi.isEmpty || waktu.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Pastikan semua data diisi untuk minggu ${i + 1}!")),
-        );
-        return;
-      }
-
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          'id_pengukuran': idPengukuran,
-          'kadar_nutrisi': int.parse(kadarNutrisi),
-          'timestamp': waktu,
-        }),
-      );
-
-      final responseData = jsonDecode(response.body);
-      if (!responseData['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Gagal menyimpan data untuk minggu ${i + 1}: ${responseData['message']}")),
-        );
-        return;
-      }
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Data pengukuran berhasil disimpan!")),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Terjadi kesalahan: $e")),
-    );
-  }
-}
-
 
   // Fungsi untuk menghapus data "Mulai Tanam"
   Future<void> hapusDataTanam() async {
@@ -141,24 +111,26 @@ class _TanamState extends State<Tanam> {
       final response = await http.post(
         Uri.parse(apiUrl),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          'id_tanam': 1, // ID yang sesuai untuk data yang ingin dihapus
-        }),
+        body: jsonEncode({}),
       );
 
-      final responseData = jsonDecode(response.body);
-      if (responseData['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Data Mulai Tanam berhasil dihapus!")),
-        );
-        setState(() {
-          tanggalController.clear();
-          jamController.clear();
-        });
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['success']) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Semua data tanam berhasil dihapus!")),
+          );
+          setState(() {
+            tanggalController.clear();
+            jamController.clear();
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Gagal menghapus data: ${responseData['error']}")),
+          );
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Gagal menghapus data: ${responseData['message']}")),
-        );
+        throw Exception("Respons server tidak valid!");
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -167,42 +139,84 @@ class _TanamState extends State<Tanam> {
     }
   }
 
-  // Fungsi untuk menghapus data "1-4 Minggu"
-  Future<void> hapusDataPengukuran() async {
-    final String apiUrl = 'http://192.168.1.18/api/hapus_pengukuran.php'; // Ganti URL API
+  // Fungsi untuk mengirim data pengukuran
+  Future<void> kirimDataPengukuran(int index) async {
+    final String apiUrl = 'http://192.168.1.18/api/save_tds.php';
 
     try {
-      for (int i = 0; i < 4; i++) {
-        final response = await http.post(
-          Uri.parse(apiUrl),
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode({
-            'kadar_nutrisi': int.parse(kadarNutrisiControllers[i].text),
-            'timestamp': waktuControllers[i].text,
-          }),
-        );
+      String ambangTds = ambangTdsControllers[index].text;
+      String waktuMulai = waktuMulaiControllers[index].text;
+      String waktuBerakhir = waktuBerakhirControllers[index].text;
 
-        final responseData = jsonDecode(response.body);
-        if (!responseData['success']) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Gagal menghapus data minggu ${i + 1}: ${responseData['message']}")),
-          );
-          return;
-        }
+      if (ambangTds.isEmpty || waktuMulai.isEmpty || waktuBerakhir.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Pastikan semua data diisi untuk minggu ${index + 1}!")),
+        );
+        return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Data pengukuran berhasil dihapus!")),
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          'minggu_ke': index + 1,
+          'ambang_tds': int.parse(ambangTds),
+          'uv_start_hour': int.parse(waktuMulai),
+          'uv_end_hour': int.parse(waktuBerakhir),
+        }),
       );
-      setState(() {
-        // Clear semua field setelah berhasil menghapus data
-        for (var controller in kadarNutrisiControllers) {
-          controller.clear();
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['success']) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Data minggu ${index + 1} berhasil disimpan!")),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Gagal menyimpan data: ${responseData['message']}")),
+          );
         }
-        for (var controller in waktuControllers) {
-          controller.clear();
+      } else {
+        throw Exception("Respons server tidak valid!");
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Terjadi kesalahan: $e")),
+      );
+    }
+  }
+
+  // Fungsi untuk menghapus data pengukuran
+  Future<void> hapusDataPengukuran(int index) async {
+    final String apiUrl = 'http://192.168.1.18/api/delete_tds.php';
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({'minggu_ke': index + 1}),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['success']) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Data minggu ${index + 1} berhasil dihapus!")),
+          );
+          setState(() {
+            ambangTdsControllers[index].clear();
+            waktuMulaiControllers[index].clear();
+            waktuBerakhirControllers[index].clear();
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Gagal menghapus data minggu ${index + 1}: ${responseData['message']}")),
+          );
         }
-      });
+      } else {
+        throw Exception("Respons server tidak valid!");
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Terjadi kesalahan: $e")),
@@ -248,7 +262,7 @@ class _TanamState extends State<Tanam> {
                             ),
                           ),
                         ),
-                        SizedBox(width: 8),
+                        SizedBox(width: 10),
                         Expanded(
                           child: TextField(
                             controller: jamController,
@@ -265,100 +279,115 @@ class _TanamState extends State<Tanam> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 16),
+                    SizedBox(height: 10),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
+                        Spacer(),
                         ElevatedButton(
                           onPressed: kirimDataTanam,
-                          child: Text('Konfirmasi'),
+                          child: Text("Kirim Data Tanam"),
                         ),
                         SizedBox(width: 8),
                         ElevatedButton(
-                          onPressed: hapusDataTanam,
-                          child: Text('Hapus Data Tanam'),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                        ),
+                        onPressed: hapusDataTanam,
+                          child: Text("Hapus Data Tanam"),
+                          style: ElevatedButton.styleFrom(
+                           foregroundColor: Colors.white, backgroundColor: Colors.red, // Warna teks putih
+                            ),
+                           ),
+
                       ],
                     ),
                   ],
                 ),
               ),
             ),
-            SizedBox(height: 16),
             // 1-4 Minggu
-            Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('1-4 Minggu', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    SizedBox(height: 8),
-                    Column(
-                      children: List.generate(4, (index) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: kadarNutrisiControllers[index],
-                                  decoration: InputDecoration(
-                                    labelText: 'Ambang Kadar Nutrisi ${index + 1}',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                ),
+            for (int i = 0; i < 4; i++)
+              Card(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Minggu ${i + 1}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: ambangTdsControllers[i],
+                              decoration: InputDecoration(
+                                labelText: 'Ambang TDS',
+                                border: OutlineInputBorder(),
                               ),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: TextField(
-                                  controller: waktuControllers[index],
-                                  readOnly: true,
-                                  decoration: InputDecoration(
-                                    labelText: 'Waktu',
-                                    border: OutlineInputBorder(),
-                                    suffixIcon: IconButton(
-                                      icon: Icon(Icons.access_time),
-                                      onPressed: () => _pilihJam(context, waktuControllers[index]),
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: waktuMulaiControllers[i],
+                                    readOnly: true,
+                                    decoration: InputDecoration(
+                                      labelText: 'Waktu Mulai',
+                                      border: OutlineInputBorder(),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(Icons.access_time),
+                                        onPressed: () => _pilihJam(context, waktuMulaiControllers[i], isMinggu: true),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: TextField(
+                                    controller: waktuBerakhirControllers[i],
+                                    readOnly: true,
+                                    decoration: InputDecoration(
+                                      labelText: 'Waktu Berakhir',
+                                      border: OutlineInputBorder(),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(Icons.access_time),
+                                        onPressed: () => _pilihJam(context, waktuBerakhirControllers[i], isMinggu: true),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        );
-                      }),
-                    ),
-                    SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        ElevatedButton(
-                          onPressed: kirimDataPengukuran,
-                          child: Text('Konfirmasi'),
-                        ),
-                        SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: hapusDataPengukuran,
-                          child: Text('Hapus Data Pengukuran'),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                      SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Spacer(),
+                          ElevatedButton(
+                            onPressed: () => kirimDataPengukuran(i),
+                            child: Text("Kirim Data Minggu ${i + 1}"),
+                          ),
+                          SizedBox(width: 8),
+                          ElevatedButton(
+                           onPressed: () => hapusDataPengukuran(i),
+                           child: Text("Hapus Data Minggu ${i + 1}"),
+                           style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white, backgroundColor: Colors.red, // Warna teks putih
+                           ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),
     );
   }
-}
-
-void main() {
-  runApp(MaterialApp(home: Tanam()));
 }

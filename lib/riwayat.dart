@@ -32,7 +32,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _fetchHistoryData() async {
-    final url = Uri.parse('http://192.168.231.37/api/getStatusPengukuran.php');
+    final url = Uri.parse('http://192.168.1.18/api/getStatusPengukuran.php');
 
     try {
       final response = await http.get(url);
@@ -54,7 +54,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _deleteLatestEntry() async {
-    final url = Uri.parse('http://192.168.231.37/api/delete.php');
+    final url = Uri.parse('http://192.168.1.18/api/delete.php');
 
     try {
       final response = await http.get(url);

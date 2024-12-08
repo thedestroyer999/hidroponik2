@@ -22,7 +22,7 @@ class _HistoryCardState extends State<HistoryCard> {
   Future<void> fetchData() async {
     try {
       // API 1: getStatusPengukuran.php
-      final response1 = await http.get(Uri.parse('http://192.168.231.37/api/getStatusPengukuran.php'));
+      final response1 = await http.get(Uri.parse('http://192.168.1.18/api/getStatusPengukuran.php'));
 
       if (response1.statusCode == 200) {
         var data1 = json.decode(response1.body);
@@ -38,7 +38,7 @@ class _HistoryCardState extends State<HistoryCard> {
       }
 
       // API 2: get_predictions.php
-      final response2 = await http.get(Uri.parse('http://192.168.231.37/api/get_predictions.php'));
+      final response2 = await http.get(Uri.parse('http://192.168.1.18/api/get_predictions.php'));
 
       if (response2.statusCode == 200) {
         var data2 = json.decode(response2.body);
