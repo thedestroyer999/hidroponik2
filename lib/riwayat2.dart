@@ -9,58 +9,86 @@ class HistoryCard extends StatefulWidget {
 }
 
 class _HistoryCardState extends State<HistoryCard> {
-  // Variabel untuk menyimpan data
   String kadarNutrisi = 'Loading...';
   String lampu = 'Loading...';
   String pompa = 'Loading...';
   String intensitasCahaya = 'Loading...';
   String timestamp = 'Loading...';
-  List<Map<String, dynamic>> tanamanList = [];
+  String tanggalTanam = 'Loading...';
+  String gambarTanaman = 'Loading...';
+  String statusTanaman = 'Loading...';
+  List<dynamic> controlData = [];
   bool isLoading = true;
 
-  // Fungsi untuk mengambil data dari kedua API
+  // Mengambil data dari API
   Future<void> fetchData() async {
     try {
-      // API 1: getStatusPengukuran.php
-      final response1 = await http.get(Uri.parse('http://192.168.1.18/api/getStatusPengukuran.php'));
+      final response1 = await http.get(Uri.parse('http://192.168.29.37/api/getStatusPengukuran.php'));
+      final response2 = await http.get(Uri.parse('http://192.168.29.37/api/get_Tanam.php'));
+      final response3 = await http.get(Uri.parse('http://192.168.29.37/api/get_predictions.php'));
+      final response4 = await http.get(Uri.parse('http://192.168.29.37/api/get_tds.php'));
 
       if (response1.statusCode == 200) {
         var data1 = json.decode(response1.body);
         if (data1['status'] == 'success') {
           setState(() {
             kadarNutrisi = "${data1['data']['kadar_nutrisi']} ppm";
-            lampu = data1['data']['status_lampu_uv'] == '1' ? 'Aktif' : 'Nonaktif';
-            pompa = data1['data']['status_pompa'] == '1' ? 'Aktif' : 'Nonaktif';
+            lampu = data1['data']['status_lampu_uv'] ?? 'Tidak diketahui';
+            pompa = data1['data']['status_pompa'] ?? 'Tidak diketahui';
             intensitasCahaya = "${data1['data']['intensitas_cahaya']} cd";
             timestamp = data1['data']['timestamp'] ?? 'Tidak ada waktu';
           });
         }
       }
 
-      // API 2: get_predictions.php
-      final response2 = await http.get(Uri.parse('http://192.168.1.18/api/get_predictions.php'));
-
       if (response2.statusCode == 200) {
         var data2 = json.decode(response2.body);
-        if (data2['status'] == 'success') {
+        if (data2.isNotEmpty) {
           setState(() {
-            tanamanList = List<Map<String, dynamic>>.from(data2['data']);
+            tanggalTanam = data2[0]['set_waktu'] ?? 'Tidak ada tanggal tanam';
+          });
+        } else {
+          setState(() {
+            tanggalTanam = 'Tidak ada tanggal tanam';
+            // Pastikan status tanaman dan gambar tetap diupdate
+            statusTanaman = 'Tidak ada status';
+            gambarTanaman = 'Tidak ada gambar';
+          });
+        }
+      }
+
+      if (response3.statusCode == 200) {
+        var data3 = json.decode(response3.body);
+        if (data3['status'] == 'success' && data3['data'].isNotEmpty) {
+          setState(() {
+            gambarTanaman = data3['data'][0]['gambar'] ?? 'Tidak ada gambar';
+            statusTanaman = data3['data'][0]['status_tanaman'] ?? 'Tidak ada status';
+          });
+        }
+      }
+
+      if (response4.statusCode == 200) {
+        var data4 = json.decode(response4.body);
+        if (data4['status'] == 'success') {
+          setState(() {
+            controlData = data4['data'];
           });
         }
       }
     } catch (error) {
-      setState(() {
-        kadarNutrisi = 'Error';
-        intensitasCahaya = 'Error';
-        lampu = 'Error';
-        pompa = 'Error';
-        timestamp = 'Error';
-      });
+      print('Error occurred: $error');
     } finally {
       setState(() {
         isLoading = false;
       });
     }
+  }
+
+  // Format tanggal saat ini
+  String _getCurrentDate() {
+    final DateTime now = DateTime.now();
+    final DateFormat formatter = DateFormat('d MMM yyyy');
+    return formatter.format(now);
   }
 
   @override
@@ -69,126 +97,223 @@ class _HistoryCardState extends State<HistoryCard> {
     fetchData();
   }
 
-  // Fungsi untuk mendapatkan tanggal saat ini
-  String _getCurrentDate() {
-    final DateTime now = DateTime.now();
-    final DateFormat formatter = DateFormat('d MMM yyyy');
-    return formatter.format(now);
-  }
-
   @override
   Widget build(BuildContext context) {
-    return isLoading
-        ? Center(child: CircularProgressIndicator())
-        : Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(),
-                SizedBox(height: 16),
-                _buildMeasurementCard(),
-                SizedBox(height: 16),
-                Divider(thickness: 2),
-                _buildPlantList(),
-              ],
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        title: Text(
+          'Riwayat Pengukuran',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.green,
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(),
+                  SizedBox(height: 16),
+                  _buildMeasurementCard(),
+                  SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Text(
+                      'Data Control',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  _buildControlTable(),
+                ],
+              ),
             ),
-          );
-  }
-
-  Widget _buildHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Riwayat Hari Ini',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        SizedBox(height: 4),
-        Text(
-          _getCurrentDate(),
-          style: TextStyle(fontSize: 16, color: Colors.grey),
-        ),
-        SizedBox(height: 4),
-        Text(
-          'Terakhir diperbarui: $timestamp',
-          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-        ),
-      ],
     );
   }
 
+  // Header bagian atas
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Riwayat Hari Ini',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+          ),
+          SizedBox(height: 4),
+          Text(
+            _getCurrentDate(),
+            style: TextStyle(fontSize: 18, color: Colors.black),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Terakhir diperbarui: $timestamp',
+            style: TextStyle(fontSize: 14, color: Colors.black),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Card untuk informasi pengukuran
   Widget _buildMeasurementCard() {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 4,
-      child: Padding(
+      elevation: 6,
+      child: Container(
+        width: double.infinity,
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            _buildInfoRow(Icons.opacity, 'Kadar Nutrisi', kadarNutrisi),
-            SizedBox(height: 12),
-            _buildInfoRow(Icons.lightbulb, 'Lampu UV', lampu),
-            SizedBox(height: 12),
-            _buildInfoRow(Icons.wb_sunny, 'Intensitas Cahaya', intensitasCahaya),
-            SizedBox(height: 12),
-            _buildInfoRow(Icons.water, 'Status Pompa', pompa),
+            if (gambarTanaman != 'Loading...' && gambarTanaman != 'Error')
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  gambarTanaman,
+                  width: double.infinity,
+                  height: 250,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            SizedBox(height: 16),
+            _buildInfoRow(Icons.opacity, 'Kadar Nutrisi', kadarNutrisi, color: Colors.blue),
+            Divider(),
+            _buildInfoRow(Icons.lightbulb, 'Lampu UV', lampu, color: const Color.fromARGB(255, 206, 135, 77)),
+            Divider(),
+            _buildInfoRow(Icons.wb_sunny, 'Intensitas Cahaya', intensitasCahaya, color: Colors.orange),
+            Divider(),
+            _buildInfoRow(Icons.water, 'Status Pompa', pompa, color: Colors.green),
+            Divider(),
+            _buildInfoRow(Icons.calendar_today, 'Tanggal Tanam', tanggalTanam, color: Colors.brown),
+            Divider(),
+            _buildInfoRow(
+              Icons.flag,
+              'Status Tanaman',
+              statusTanaman,
+              color: statusTanaman.toLowerCase() == 'buruk' ? Colors.red : Colors.black,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPlantList() {
-    return Expanded(
-      child: tanamanList.isEmpty
-          ? Center(child: Text('Tidak ada data tanaman.'))
-          : ListView.builder(
-              itemCount: tanamanList.length,
-              itemBuilder: (context, index) {
-                final tanaman = tanamanList[index];
-                return Card(
-                  margin: EdgeInsets.symmetric(vertical: 8.0),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: ListTile(
-                    leading: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        tanaman['gambar'] ?? '',
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Icon(Icons.broken_image),
-                      ),
-                    ),
-                    title: Text(
-                      'Tanaman ${tanaman['id_tanaman']}',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text('Status: ${tanaman['status_tanaman']}'),
-                  ),
-                );
-              },
-            ),
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  // Menampilkan informasi dalam baris
+  Widget _buildInfoRow(IconData icon, String label, String value, {Color color = Colors.black}) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Icon(icon, size: 24, color: Colors.blue),
-        SizedBox(width: 16),
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
+        Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: color.withOpacity(0.2),
+              child: Icon(icon, size: 20, color: color),
+            ),
+            SizedBox(width: 16),
+            Text(
+              label,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+            ),
+          ],
         ),
         Text(
           value,
-          style: TextStyle(fontSize: 16, color: Colors.grey[800]),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
         ),
       ],
     );
+  }
+
+  // Menampilkan tabel data control
+  Widget _buildControlTable() {
+    return controlData.isEmpty
+        ? Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20.0),
+              child: Text(
+                'Tidak ada data untuk ditampilkan',
+                style: TextStyle(fontSize: 18, color: Colors.black),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          )
+        : Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 4,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      headingRowColor:
+                          MaterialStateColor.resolveWith((states) => Colors.green[100]!),
+                      columns: [
+                        DataColumn(
+                          label: Text(
+                            'Minggu Ke',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                          ),
+                        ),
+                        DataColumn(
+                          label: Text(
+                            'Ambang TDS',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                          ),
+                        ),
+                        DataColumn(
+                          label: Text(
+                            'UV Start Hour',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                          ),
+                        ),
+                        DataColumn(
+                          label: Text(
+                            'UV End Hour',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                          ),
+                        ),
+                      ],
+                      rows: controlData.map<DataRow>((item) {
+                        return DataRow(cells: [
+                          DataCell(
+                            Text(
+                              item['minggu_ke'].toString(),
+                              style: TextStyle(fontSize: 14, color: Colors.black),
+                            ),
+                          ),
+                          DataCell(
+                            Text(
+                              item['ambang_tds'].toString(),
+                              style: TextStyle(fontSize: 14, color: Colors.black),
+                            ),
+                          ),
+                          DataCell(
+                            Text(
+                              item['uv_start_hour'].toString(),
+                              style: TextStyle(fontSize: 14, color: Colors.black),
+                            ),
+                          ),
+                          DataCell(
+                            Text(
+                              item['uv_end_hour'].toString(),
+                              style: TextStyle(fontSize: 14, color: Colors.black),
+                            ),
+                          ),
+                        ]);
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
   }
 }

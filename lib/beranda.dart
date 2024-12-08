@@ -34,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _statusPompa = '';
   String _statusLampuUV = '';
 
-  final String baseUrl = 'http://192.168.1.18/api/getStatusPengukuran.php';
+  final String baseUrl = 'http://192.168.29.37/api/getStatusPengukuran.php';
 
   @override
   void initState() {
@@ -54,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 Future<void> _fetchStatusData() async {
-  final String url = 'http://192.168.1.18/api/getStatusPengukuran.php';
+  final String url = 'http://192.168.29.37/api/getStatusPengukuran.php';
   try {
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
@@ -78,7 +78,7 @@ Future<void> _fetchStatusData() async {
   }
 }
 Future<void> _fetchPlantStatus() async {
-  final String url = 'http://192.168.1.18/api/get_predictions.php'; // Pastikan URL benar
+  final String url = 'http://192.168.29.37/api/get_predictions.php'; // Pastikan URL benar
   try {
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
@@ -220,7 +220,7 @@ Widget _buildControlCards() {
   return Column(
     children: [
       _buildCardWithIcon('Pompa Air', _statusPompa, Icons.water, Colors.blue),
-      _buildCardWithIcon('Lampu UV', _statusLampuUV, Icons.lightbulb, Colors.purple),
+      _buildCardWithIcon('Lampu UV', _statusLampuUV, Icons.lightbulb, const Color.fromARGB(255, 217, 255, 0)),
     ],
   );
 }
@@ -286,7 +286,7 @@ Widget _buildControlCards() {
 
 
  Future<Map<String, dynamic>> _fetchModelAccuracy() async {
-  final String apiUrl = 'http://192.168.1.18/api/get_accuracy.php'; // Sesuaikan endpoint PHP
+  final String apiUrl = 'http://192.168.29.37/api/get_accuracy.php'; // Sesuaikan endpoint PHP
   try {
     final response = await http.get(Uri.parse(apiUrl));
     if (response.statusCode == 200) {

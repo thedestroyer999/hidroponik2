@@ -46,11 +46,10 @@ class _TanamState extends State<Tanam> {
     if (pickedTime != null) {
       String formattedTime;
       if (isMinggu) {
-        // Jika untuk Minggu, hanya format jam yang diambil
         formattedTime = "${pickedTime.hour.toString().padLeft(2, '0')}";
       } else {
-        // Untuk Mulai Tanam, format lengkap dengan menit
-        formattedTime = "${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}";
+        formattedTime =
+            "${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}";
       }
 
       setState(() {
@@ -61,7 +60,7 @@ class _TanamState extends State<Tanam> {
 
   // Fungsi untuk mengirim data "Mulai Tanam"
   Future<void> kirimDataTanam() async {
-    final String apiUrl = 'http://192.168.1.18/api/save_tanam.php'; // Ganti URL API
+    final String apiUrl = 'http://192.168.29.37/api/save_tanam.php';
 
     try {
       if (tanggalController.text.isEmpty || jamController.text.isEmpty) {
@@ -77,7 +76,7 @@ class _TanamState extends State<Tanam> {
         Uri.parse(apiUrl),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          'id_tanam': 1, // ID dummy, ganti sesuai kebutuhan
+          'id_tanam': 1,
           'set_waktu': formattedDatetime,
         }),
       );
@@ -105,7 +104,7 @@ class _TanamState extends State<Tanam> {
 
   // Fungsi untuk menghapus data "Mulai Tanam"
   Future<void> hapusDataTanam() async {
-    final String apiUrl = 'http://192.168.1.18/api/delete_tanam.php'; // Ganti URL API
+    final String apiUrl = 'http://192.168.29.37/api/delete_tanam.php';
 
     try {
       final response = await http.post(
@@ -141,7 +140,7 @@ class _TanamState extends State<Tanam> {
 
   // Fungsi untuk mengirim data pengukuran
   Future<void> kirimDataPengukuran(int index) async {
-    final String apiUrl = 'http://192.168.1.18/api/save_tds.php';
+    final String apiUrl = 'http://192.168.29.37/api/save_tds.php';
 
     try {
       String ambangTds = ambangTdsControllers[index].text;
@@ -189,7 +188,7 @@ class _TanamState extends State<Tanam> {
 
   // Fungsi untuk menghapus data pengukuran
   Future<void> hapusDataPengukuran(int index) async {
-    final String apiUrl = 'http://192.168.1.18/api/delete_tds.php';
+    final String apiUrl = 'http://192.168.29.37/api/delete_tds.php';
 
     try {
       final response = await http.post(
@@ -228,7 +227,8 @@ class _TanamState extends State<Tanam> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        automaticallyImplyLeading: false, // Menghapus tanda panah navigasi
+        backgroundColor: const Color.fromARGB(255, 48, 125, 51),
         title: Text('Tanam', style: TextStyle(color: Colors.white)),
       ),
       body: Padding(
@@ -282,20 +282,23 @@ class _TanamState extends State<Tanam> {
                     SizedBox(height: 10),
                     Row(
                       children: [
-                        Spacer(),
-                        ElevatedButton(
-                          onPressed: kirimDataTanam,
-                          child: Text("Kirim Data Tanam"),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: kirimDataTanam,
+                            child: Text("Kirim Data"),
+                          ),
                         ),
                         SizedBox(width: 8),
-                        ElevatedButton(
-                        onPressed: hapusDataTanam,
-                          child: Text("Hapus Data Tanam"),
-                          style: ElevatedButton.styleFrom(
-                           foregroundColor: Colors.white, backgroundColor: Colors.red, // Warna teks putih
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: hapusDataTanam,
+                            child: Text("Hapus Data"),
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.red,
                             ),
-                           ),
-
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -366,18 +369,22 @@ class _TanamState extends State<Tanam> {
                       SizedBox(height: 10),
                       Row(
                         children: [
-                          Spacer(),
-                          ElevatedButton(
-                            onPressed: () => kirimDataPengukuran(i),
-                            child: Text("Kirim Data Minggu ${i + 1}"),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => kirimDataPengukuran(i),
+                              child: Text("Kirim Data"),
+                            ),
                           ),
                           SizedBox(width: 8),
-                          ElevatedButton(
-                           onPressed: () => hapusDataPengukuran(i),
-                           child: Text("Hapus Data Minggu ${i + 1}"),
-                           style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white, backgroundColor: Colors.red, // Warna teks putih
-                           ),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => hapusDataPengukuran(i),
+                              child: Text("Hapus Data"),
+                              style: ElevatedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                backgroundColor: Colors.red,
+                              ),
+                            ),
                           ),
                         ],
                       ),

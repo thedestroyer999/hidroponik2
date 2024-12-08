@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'login.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -17,8 +16,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController passwordController = TextEditingController();
   File? _imageFile;
   bool _isLoading = false;
-  String? _imagePath; // Path foto profil yang tersimpan
-
+  String? _imagePath;
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -32,7 +30,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {
       usernameController.text = prefs.getString('username') ?? '';
       passwordController.text = prefs.getString('password') ?? '';
-      _imagePath = prefs.getString('foto_profil'); // Memuat path foto profil
+      _imagePath = prefs.getString('foto_profil');
     });
   }
 
@@ -63,13 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Navigator.pop(context);
               },
             ),
-            Text(
-              'Profil',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: screenWidth * 0.05,
-              ),
-            ),
+            Text('Profil', style: TextStyle(color: Colors.white, fontSize: screenWidth * 0.05)),
           ],
         ),
       ),
@@ -87,13 +79,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   backgroundColor: Colors.green[900],
                   backgroundImage: _imageFile != null
                       ? FileImage(_imageFile!)
-                      : (_imagePath != null ? FileImage(File(_imagePath!)) : null), // Menampilkan foto dari path yang tersimpan
+                      : (_imagePath != null ? FileImage(File(_imagePath!)) : null),
                   child: (_imageFile == null && _imagePath == null)
-                      ? Icon(
-                          Icons.person,
-                          size: screenWidth * 0.25,
-                          color: Colors.white,
-                        )
+                      ? Icon(Icons.person, size: screenWidth * 0.25, color: Colors.white)
                       : null,
                 ),
               ),
@@ -104,15 +92,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   labelText: 'Nama Pengguna',
                   labelStyle: TextStyle(color: Colors.grey),
                   hintText: 'Masukkan Nama Pengguna',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.green, width: 1.5),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.green, width: 1.5),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.green, width: 1.5)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.green, width: 1.5)),
                 ),
               ),
               SizedBox(height: screenHeight * 0.03),
@@ -123,15 +104,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   labelText: 'Kata Sandi',
                   labelStyle: TextStyle(color: Colors.grey),
                   hintText: 'Masukkan Kata Sandi',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.green, width: 1.5),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.green, width: 1.5),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.green, width: 1.5)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.green, width: 1.5)),
                 ),
               ),
               SizedBox(height: screenHeight * 0.04),
@@ -140,37 +114,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _buildActionButton(
-                          context,
-                          label: 'Simpan',
-                          color: Colors.blue,
-                          onPressed: () => _showConfirmationDialog(
-                            context,
-                            title: "Konfirmasi Simpan",
-                            content: "Apakah Anda yakin ingin menyimpan perubahan?",
-                            confirmLabel: "Simpan",
-                            onConfirm: () {
-                              _updateProfile(context);
-                            },
-                          ),
-                        ),
-                        _buildActionButton(
-                          context,
-                          label: 'Keluar',
-                          color: Colors.red,
-                          onPressed: () => _showConfirmationDialog(
-                            context,
-                            title: "Konfirmasi Keluar",
-                            content: "Apakah Anda yakin ingin keluar?",
-                            confirmLabel: "Keluar",
-                            onConfirm: () {
-                              Navigator.of(context).pushAndRemoveUntil(
-                                MaterialPageRoute(builder: (context) => LoginScreen()),
-                                (Route<dynamic> route) => false,
-                              );
-                            },
-                          ),
-                        ),
+                        _buildActionButton(context, label: 'Simpan', color: Colors.blue, onPressed: () => _updateProfile(context)),
+                        _buildActionButton(context, label: 'Keluar', color: Colors.red, onPressed: () => _logout(context)),
                       ],
                     ),
               SizedBox(height: screenHeight * 0.1),
@@ -183,18 +128,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);
-        _imagePath = pickedFile.path; // Menyimpan path foto yang dipilih
+        _imagePath = pickedFile.path;
       });
     }
   }
 
   Future<void> _updateProfile(BuildContext context) async {
     if (usernameController.text.isEmpty || passwordController.text.isEmpty) {
-      _showErrorDialog(context, message: "Nama Pengguna dan Kata Sandi tidak boleh kosong");
+      _showErrorDialog(context, message: "Username and password cannot be empty.");
       return;
     }
 
@@ -205,38 +149,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse("http://192.168.18.63/api/update_profile.php"),
+        Uri.parse("http://192.168.29.37/api/update_profile.php"),
       );
-      request.fields['id_user'] = '1';
+      request.fields['id_user'] = '1'; // You can replace this with the correct user ID
       request.fields['username'] = usernameController.text;
       request.fields['password'] = passwordController.text;
 
       if (_imageFile != null) {
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'foto_profil',
-            _imageFile!.path,
-          ),
-        );
+        request.files.add(await http.MultipartFile.fromPath('foto_profil', _imageFile!.path));
       }
 
       final response = await request.send();
       final responseData = await http.Response.fromStream(response);
-
       final data = json.decode(responseData.body);
 
       if (data['status'] == 'success') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Profil berhasil diperbarui!')),
-        );
-
-        // Simpan data profil secara lokal, termasuk foto
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile updated successfully!')));
         await _saveProfileLocally(usernameController.text, passwordController.text, _imagePath);
       } else {
-        _showErrorDialog(context, message: "Gagal memperbarui profil: ${data['message']}");
+        _showErrorDialog(context, message: "Failed to update profile: ${data['message']}");
       }
     } catch (e) {
-      _showErrorDialog(context, message: "Terjadi kesalahan: $e");
+      _showErrorDialog(context, message: "An error occurred: $e");
     } finally {
       setState(() {
         _isLoading = false;
@@ -244,40 +178,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _showConfirmationDialog(BuildContext context,
-      {required String title, required String content, required String confirmLabel, required VoidCallback onConfirm}) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: Text(content),
-          actions: <Widget>[
-            TextButton(
-              child: Text(confirmLabel),
-              onPressed: () {
-                Navigator.of(context).pop();
-                onConfirm();
-              },
-            ),
-            TextButton(
-              child: Text("Batal"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _showErrorDialog(BuildContext context, {required String message}) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text("Gagal"),
+          title: Text("Error"),
           content: Text(message),
           actions: <Widget>[
             TextButton(
@@ -293,27 +199,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildActionButton(BuildContext context, {required String label, required Color color, required VoidCallback onPressed}) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
     return SizedBox(
-      width: screenWidth * 0.4,
+      width: MediaQuery.of(context).size.width * 0.4,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           padding: EdgeInsets.symmetric(vertical: 15),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: screenWidth * 0.05,
-            color: Colors.white,
-          ),
-        ),
+        child: Text(label, style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.05, color: Colors.white)),
       ),
+    );
+  }
+
+  void _logout(BuildContext context) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+      (Route<dynamic> route) => false,
     );
   }
 }

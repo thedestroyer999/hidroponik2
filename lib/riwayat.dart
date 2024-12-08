@@ -32,7 +32,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _fetchHistoryData() async {
-    final url = Uri.parse('http://192.168.1.18/api/getStatusPengukuran.php');
+    final url = Uri.parse('http://192.168.29.37/api/getStatusPengukuran.php');
 
     try {
       final response = await http.get(url);
@@ -54,7 +54,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _deleteLatestEntry() async {
-    final url = Uri.parse('http://192.168.1.18/api/delete.php');
+    final url = Uri.parse('http://192.168.29.37/api/delete.php');
 
     try {
       final response = await http.get(url);
@@ -90,26 +90,39 @@ class _HistoryScreenState extends State<HistoryScreen> {
           'Riwayat',
           style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: Colors.green[900],
+        backgroundColor: Colors.green[800],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(8.0), // Mengurangi padding agar lebih responsif
         child: _historyData == null
-            ? Center(child: Text("No history available"))
+            ? Center(
+                child: Text(
+                  "No history available",
+                  style: TextStyle(fontSize: 16, color: Colors.black87),
+                ),
+              )
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Card(
                     elevation: 4,
+                    color: Colors.green[50],
                     child: ListTile(
-                      title: Text('Riwayat Hari Ini'),
-                      subtitle: Text(formattedDate), // Display current date here
+                      title: Text(
+                        'Riwayat Hari Ini',
+                        style: TextStyle(color: Colors.black87),
+                      ),
+                      subtitle: Text(
+                        formattedDate,
+                        style: TextStyle(color: Colors.black54),
+                      ),
                       onTap: () {
                         _showHistoryDialog(context);
                       },
                       trailing: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
+                          backgroundColor: Colors.red[800],
+                          foregroundColor: Colors.white,
                         ),
                         onPressed: _deleteLatestEntry,
                         child: Text(
@@ -135,7 +148,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
           contentPadding: EdgeInsets.zero,
           content: Container(
-            width: 300,
+            width: MediaQuery.of(context).size.width * 0.8, // Menyesuaikan dengan lebar layar
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: HistoryCard(),
           ),
         );

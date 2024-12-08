@@ -38,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final response = await http.post(
         Uri.parse(
-            "http://192.168.1.18/api/login.php"), // Sesuaikan URL API
+            "http://192.168.29.37/api/login.php"), // Sesuaikan URL API
         body: {
           'username': username,
           'password': password,
